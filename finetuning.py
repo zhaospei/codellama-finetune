@@ -5,8 +5,10 @@ from transformers import (
     default_data_collator, 
     Trainer, 
     TrainingArguments,
+    TrainerCallback,
 )
 from utils.tokenizer import get_preprocessed_cmg, get_preprocessed_cmg_history
+from contextlib import nullcontext
 from tqdm import tqdm
 import json
 
@@ -53,8 +55,6 @@ def create_peft_config(model):
 # create peft config
 model, lora_config = create_peft_config(model)
 
-from transformers import TrainerCallback
-from contextlib import nullcontext
 enable_profiler = False
 output_dir = "tmp/code-llama-output"
 
@@ -119,28 +119,3 @@ with profiler:
     trainer.train()
 
 model.save_pretrained(output_dir)
-
-model.eval()
-
-def read_contextual_medit_examples(filename):
-    """Read examples from filename."""
-    examples = []
-    with open(filename, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            js = json.loads(line)
-            examples.append(js['prompt'])
-    return examples
-
-examples = read_contextual_medit_examples('test.input.jsonl')
-
-def write_string_to_file(absolute_filename, string):
-    with open(absolute_filename, 'a') as fout:
-        fout.write(string)
-
-for eval_prompt in tqdm(examples):
-    model_input = tokenizer(eval_prompt, return_tensors="pt").to("cuda")
-    output = ''
-    with torch.no_grad():
-        output = tokenizer.decode(model.generate(**model_input, max_new_tokens=32, pad_token_id=tokenizer.eos_token_id)[0], skip_special_tokens=True)
-    write_string_to_file('test.codellama.output', '' + output + '<nl>')
