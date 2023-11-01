@@ -6,11 +6,11 @@ from transformers import (
     Trainer, 
     TrainingArguments,
 )
-from utils.tokenizer import get_preprocessed_cmg
+from utils.tokenizer import get_preprocessed_cmg, get_preprocessed_cmg_history
 from tqdm import tqdm
 import json
 
-dataset_id = "zhaospei/cmg-codellama"
+dataset_id = "zhaospei/cmg-history"
 model_id = "codellama/CodeLlama-7b-hf"
 
 tokenizer = CodeLlamaTokenizer.from_pretrained(model_id)
@@ -20,7 +20,7 @@ model = AutoModelForCausalLM.from_pretrained(model_id, load_in_8bit=True, device
 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "right" # Fix weird overflow issue with fp16 training
-train_dataset = get_preprocessed_cmg(dataset_id, tokenizer, 'train')
+train_dataset = get_preprocessed_cmg_history(dataset_id, tokenizer, 'train')
 
 # train_dataset = get_preprocessed_dataset(tokenizer, samsum_dataset, 'train')
 # train_dataset = get_preprocessed_samsum(cmg_dataset, tokenizer, 'train')
@@ -116,7 +116,7 @@ with profiler:
     )
 
     # Start training
-    # trainer.train()
+    trainer.train()
 
 model.save_pretrained(output_dir)
 
