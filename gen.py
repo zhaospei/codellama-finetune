@@ -37,3 +37,6 @@ def gen(model_base, model_peft, input_file, output_file):
         with torch.no_grad():
             output = tokenizer.decode(model.generate(**model_input, max_new_tokens=32, pad_token_id=tokenizer.eos_token_id)[0], skip_special_tokens=True)
         write_string_to_file(output_file, '' + output + '<nl>')
+
+if __name__ == "__main__":
+    gen('codellama/CodeLlama-7b-hf', '/home/dungbt/llama/tmp/code-llama-output', 'test.input.jsonl', 'test.codellama.reload.output')
