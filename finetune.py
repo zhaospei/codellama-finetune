@@ -1,30 +1,31 @@
 import torch
 from transformers import (
     AutoModelForCausalLM, 
-    AutoTokenizer, 
+    CodeLlamaTokenizer,
     default_data_collator, 
     Trainer, 
     TrainingArguments,
-    TrainerCallback
 )
 from utils.tokenizer import get_preprocessed_cmg
-from contextlib import nullcontext
-import json
 from tqdm import tqdm
+import json
 
-model_id = "codellama/CodeLlama-7b-hf"
 dataset_id = "zhaospei/cmg-codellama"
+model_id = "codellama/CodeLlama-7b-hf"
 
-tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer = CodeLlamaTokenizer.from_pretrained(model_id)
 
 model = AutoModelForCausalLM.from_pretrained(model_id, load_in_8bit=True, device_map='auto', torch_dtype=torch.float16)
 
+
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "right" # Fix weird overflow issue with fp16 training
 train_dataset = get_preprocessed_cmg(dataset_id, tokenizer, 'train')
 
+# train_dataset = get_preprocessed_dataset(tokenizer, samsum_dataset, 'train')
+# train_dataset = get_preprocessed_samsum(cmg_dataset, tokenizer, 'train')
+
 model.train()
-
-
-print("-----------Training----------------")
 
 def create_peft_config(model):
     from peft import (
@@ -52,8 +53,10 @@ def create_peft_config(model):
 # create peft config
 model, lora_config = create_peft_config(model)
 
+from transformers import TrainerCallback
+from contextlib import nullcontext
 enable_profiler = False
-output_dir = "tmp/codellama-output"
+output_dir = "tmp/code-llama-output"
 
 config = {
     'lora_config': lora_config,
@@ -87,8 +90,6 @@ if enable_profiler:
 else:
     profiler = nullcontext()
 
-
-
 # Define training args
 training_args = TrainingArguments(
     output_dir=output_dir,
@@ -115,11 +116,10 @@ with profiler:
     )
 
     # Start training
-    trainer.train()
-
-print("-----------Testing----------------")
+    # trainer.train()
 
 model.save_pretrained(output_dir)
+
 model.eval()
 
 def read_contextual_medit_examples(filename):
@@ -134,11 +134,13 @@ def read_contextual_medit_examples(filename):
 
 examples = read_contextual_medit_examples('test.input.jsonl')
 
-print(len(examples))
-f = open('test.output', 'a')
+def write_string_to_file(absolute_filename, string):
+    with open(absolute_filename, 'a') as fout:
+        fout.write(string)
 
-for example in tqdm(examples):
-    model_input = tokenizer(example, return_tensors="pt").to("cuda")
+for eval_prompt in tqdm(examples):
+    model_input = tokenizer(eval_prompt, return_tensors="pt").to("cuda")
+    output = ''
     with torch.no_grad():
-       output = tokenizer.decode(model.generate(**model_input, max_new_tokens=32)[0], skip_special_tokens=True)
-    f.write(output)
+        output = tokenizer.decode(model.generate(**model_input, max_new_tokens=32, pad_token_id=tokenizer.eos_token_id)[0], skip_special_tokens=True)
+    write_string_to_file('test.codellama.output', '' + output + '<nl>')

@@ -2,7 +2,6 @@ import re
 import json
 from tqdm import tqdm
 
-
 def get_cmg_from_output(filename, tempfile):
     outl = open(filename, 'r').read().split('<nl>')
     with open(tempfile) as f:
