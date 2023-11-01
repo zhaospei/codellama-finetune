@@ -2,8 +2,8 @@ import copy
 import datasets
 
 
-def get_preprocessed_cmg(tokenizer, split):
-    dataset = datasets.load_dataset("samsum", split=split)
+def get_preprocessed_cmg(dataset_id, tokenizer, split):
+    dataset = datasets.load_dataset(dataset_id, split=split)
 
     prompt = (
         f"Give a short commit message for code from git diff:\n{{diff}}\n---\Short commit message:\n"
