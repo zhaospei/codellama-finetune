@@ -14,7 +14,7 @@ import json
 import argparse
 
 def run(batch_size, load_in_8bit):
-    dataset_id = "zhaospei/cmg-history"
+    dataset_id = "zhaospei/cmg-data-v2"
     model_id = "codellama/CodeLlama-7b-hf"
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)

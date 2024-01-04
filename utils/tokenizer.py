@@ -90,7 +90,7 @@ def get_preprocessed_cmg_history(dataset_id, tokenizer, split):
 
     def apply_prompt_template(sample):
         return {
-            "prompt": prompt.format(vccs=sample['vccs_msg'], diff=sample["diff"]),
+            "prompt": prompt.format(vccs=sample['author_msgs'], diff=sample["diff"]),
             "message": sample["msg"],
         }
 
