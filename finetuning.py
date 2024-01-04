@@ -49,7 +49,8 @@ def run(batch_size, load_in_8bit):
         )
 
         # prepare int-8 model for training
-        model = prepare_model_for_int8_training(model)
+        if load_in_8bit:
+            model = prepare_model_for_int8_training(model)
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()
         return model, peft_config
